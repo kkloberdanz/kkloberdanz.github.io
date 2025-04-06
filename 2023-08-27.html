@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Kyle Kloberdanz's Blog</title>
+        <link rel="stylesheet" type="text/css" href="style/style.css" />
+        <link rel="shortcut icon" type="image/jpg" href="image/favicon.jpg"/>
+    </head>
+
+    <body>
+        <div class="header">
+            <h2>Kyle Kloberdanz's Blog</h2>
+            <h4><a href="index.html">Home</a></h4>
+        </div>
+
+        <div class="row">
+            <div class="leftcolumn">
+                <div class="card">
+<h2 class="posttitle">Setting Up Postgresql on FreeBSD 13.2</h2>
+<h5>27 August 2023</h5>
+<pre>
+kyle@klover0004:~ $ sudo pkg install -y postgresql15-server postgresql15-client
+To run PostgreSQL at startup, add
+'postgresql_enable="YES"' to /etc/rc.conf
+
+As root:
+# /usr/local/etc/rc.d/postgresql initdb
+
+Success. You can now start the database server using:
+
+    /usr/local/bin/pg_ctl -D /var/db/postgres/data15 -l logfile start
+
+# su postgres
+$ /usr/local/bin/pg_ctl -D /var/db/postgres/data15 -l logfile start
+$ service postgresql start
+$ service postgresql status
+# cd /var/db/postgres/data15/
+# vim pg_hba.conf
+
+root@klover0004:/var/db/postgres/data15 # vim postgresql.conf
+listen_addresses = '*'          # what IP address(es) to listen on;
+
+kyle@klover0004:~ $ sudo service postgresql restart
+
+Update pg_hba.conf from this:
+#host    all             all             127.0.0.1/32            trust
+To this:
+host    all             all             0.0.0.0/0            scram-sha-256
+
+# service postgresql restart
+# su - postgres
+$ psql
+postgres=# \password postgres
+
+postgres=# create database sphere_db;
+CREATE DATABASE
+
+postgres=# create user sphere_admin with encrypted password '${SPHERE_ADMIN_PASSWORD}';
+postgres=# create user sphere_user with encrypted password '${SPHERE_USER_PASSWORD}';
+
+postgres=# grant all privileges on database sphere_db to sphere_admin;
+GRANT
+
+postgres=# GRANT ALL ON DATABASE sphere_db TO sphere_admin;
+postgres=# ALTER DATABASE sphere_db OWNER TO sphere_admin;
+
+$ sudo su - postgres
+$ psql -U sphere_admin -d sphere_db -W
+sphere_db=> create table posts (id uuid PRIMARY KEY, username text, msg text, upvotes bigint, "date_created" timestamp not null default CURRENT_TIMESTAMP, weight double precision);
+sphere_db=> GRANT SELECT ON posts TO sphere_user;
+GRANT
+
+GRANT SELECT ON posts TO sphere_user;
+GRANT UPDATE ON posts TO sphere_user;
+GRANT INSERT ON posts TO sphere_user;
+
+To connect:
+$ psql postgres://sphere_user:${SPHERE_USER_PASSWORD}@192.168.0.176:5432/sphere_db
+
+sphere_db=> insert into posts (id, msg, upvotes, weight) values('50881e30-4f1a-4b57-97f3-10c1961c82e9', 'another test message', 2, 2.0);
+sphere_db=> create table userlogin (username text PRIMARY KEY, token text, "token_expiration" timestamp not null default CURRENT_TIMESTAMP + INTERVAL '1 MONTH', password_bcrypt text, salt text);
+
+GRANT SELECT ON userlogin TO sphere_user;
+GRANT UPDATE ON userlogin TO sphere_user;
+GRANT INSERT ON userlogin TO sphere_user;
+
+sphere_db=> create table files (id uuid PRIMARY KEY, filetype text, post_id uuid, path text, "date_created" timestamp not null default CURRENT_TIMESTAMP);
+
+GRANT SELECT ON files TO sphere_user;
+GRANT UPDATE ON files TO sphere_user;
+GRANT INSERT ON files TO sphere_user;
+
+SELECT posts.username, posts.msg, files.id
+        FROM posts LEFT JOIN files ON posts.id=files.post_id
+        ORDER BY weight, posts.date_created DESC;
+
+sphere_db=> create table comments (id uuid PRIMARY KEY, post_id uuid, username text, msg text, upvotes bigint, "date_created" timestamp not null default CURRENT_TIMESTAMP, weight double precision);
+
+GRANT SELECT ON comments TO sphere_user;
+GRANT UPDATE ON comments TO sphere_user;
+GRANT INSERT ON comments TO sphere_user;
+
+CREATE TABLE inbox (
+    id uuid PRIMARY KEY,
+    post_id uuid,
+    username text,
+    msg text,
+    read boolean,
+    "date_created" timestamp not null default CURRENT_TIMESTAMP
+);
+
+GRANT SELECT ON inbox TO sphere_user;
+GRANT UPDATE ON inbox TO sphere_user;
+GRANT INSERT ON inbox TO sphere_user;
+
+</pre>
+                </div>
+            </div>
+            <div class="rightcolumn">
+                <div class="card">
+                    <h2>About</h2>
+                    <img class="img" src="image/bw-bike-des-moines-capitol-small.jpg" alt="bicycle, and the Des Moines Capitol Building">
+                    <p>
+                        This blog is about whatever I find interesting at this
+                        very moment. I'll post how-to articles on occasion and
+                        various lessons that I've learned in my career.
+                    </p>
+                </div>
+                <div class="card">
+                    <h2>Me</h2>
+                    <p>
+                        I am a software developer from Des Moines Iowa.
+                        I graduated from the University of Iowa with a B.S.
+                        in Computer Science.
+                    </p>
+                    <p>
+                        I am interested in math, compilers, and
+                        interpreters, and I always strive to understand
+                        how various systems work from the ground up.
+                    </p>
+                    <p>
+                        The languages I use most often include
+                        <ul>
+                            <li>C</li>
+                            <li>Rust</li>
+                            <li>Python</li>
+                            <li>C++</li>
+                            <li>Go</li>
+                        </ul>
+                    </p>
+                    <p>
+                        I like working in a UNIX or Linux environment.
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>Posts</h3>
+                    <ul>
+<li><a href="2025-04-06.html">[2025-04-06] Will it still work in 50 years?</a></li>
+<li><a href="2023-08-27.html">[2023-08-27] Setting Up Postgresql on FreeBSD 13.2</a></li>
+<li><a href="2023-07-08.html">[2023-07-08] I still like C</a></li>
+<li><a href="2023-03-04.html">[2023-03-04] Self host a website in 2023</a></li>
+<li><a href="2022-07-04.html">[2022-07-04] Implementing Math Operations From Scratch</a></li>
+<li><a href="2020-10-25.html">[2020-10-25] Convolutions - Where Signal Processing and Machine learning Meet</a></li>
+<li><a href="2020-05-14.html">[2020-05-14] A tale of two servers, or why I shudder at the mention of race conditions</a></li>
+<li><a href="2020-05-13.html">[2020-05-13] Let's build a Lisp interpreter in Rust! (Part 1 - Lexing)</a></li>
+<li><a href="2020-05-10.html">[2020-05-10] OpenMP - Static or Dynamic Scheduling?</a></li>                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Follow Me</h3>
+                    <ul>
+                        <li>
+                            <a href="https://github.com/kkloberdanz">Github</a>
+                        </li>
+                        <li>
+                            <a href="https://www.linkedin.com/in/kyle-kloberdanz-172aaa5a/">linkedin</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Scientific Research Publications</h3>
+                    <ul>
+                        <li>
+                            <a href="https://conf.researchr.org/details/icse-2022/icse-2022-papers/59/DeepStability-A-Study-of-Unstable-Numerical-Methods-and-Their-Solutions-in-Deep-Lear">[ICSE 2022 Technical Track] DeepStability: A Study of Unstable Numerical Methods and Their Solutions in Deep Learning</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h3>2023 Kyle Kloberdanz</h3>
+        </div>
+    </body>
+</html>
